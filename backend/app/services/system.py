@@ -1,16 +1,17 @@
 import logging
 import sys
+import os
 import subprocess
 import time
 import asyncio
 import httpx
 import psutil
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 logger = logging.getLogger("atlas-backend")
 
 class SystemService:
-    """Service for retrieving local OS metrics, launching default apps, window focusing, and network speed testing."""
+    """Service for retrieving local OS metrics, launching default apps, window focusing, and real-time file system resolution."""
 
     def get_system_metrics(self) -> Dict[str, Any]:
         """Returns current CPU, RAM, and Disk metrics."""
@@ -77,6 +78,96 @@ class SystemService:
             "title": active_title,
             "process": process_name
         }
+
+    def list_running_applications(self) -> List[str]:
+        """Lists active running application names in real time."""
+        apps = set()
+        try:
+            for proc in psutil.process_iter(['name']):
+                name = proc.info.get('name')
+                if name and name.endswith(('.exe', '.app')):
+                    apps.add(name)
+        except Exception as e:
+            logger.error(f"Failed to list running applications: {str(e)}")
+        return sorted(list(apps))[:15]  # Top 15 active app processes
+
+    def find_local_folder(self, folder_name_query: str) -> Optional[str]:
+        """
+        Scans common local root directories in real time to locate matching folder paths.
+        """
+        query_clean = folder_name_query.strip().strip('"\'').lower()
+        if not query_clean:
+            return None
+
+        # Check direct path first if already an absolute path
+        if os.path.exists(folder_name_query) and os.path.isdir(folder_name_query):
+            return os.path.abspath(folder_name_query)
+
+        # Roots to scan for local projects and user directories
+        home_dir = os.path.expanduser("~")
+        search_roots = [
+            r"d:\Projects",
+            r"c:\Projects",
+            r"d:\Atlas",
+            os.path.join(home_dir, "Desktop"),
+            os.path.join(home_dir, "Documents"),
+            os.path.join(home_dir, "Downloads"),
+            home_dir
+        ]
+
+        logger.info(f"Searching local file system in real time for folder matching: '{folder_name_query}'")
+
+        for root in search_roots:
+            if not os.path.exists(root):
+                continue
+            try:
+                # Direct check of children in root
+                for item in os.listdir(root):
+                    item_path = os.path.join(root, item)
+                    if os.path.isdir(item_path):
+                        if item.lower() == query_clean or query_clean in item.lower():
+                            logger.info(f"Real-time directory match found: {item_path}")
+                            return item_path
+
+                # Shallow walk down 2 levels
+                for current_root, dirs, _ in os.walk(root):
+                    # Limit depth
+                    rel_path = os.path.relpath(current_root, root)
+                    if rel_path.count(os.sep) >= 2:
+                        dirs.clear()  # don't recurse deeper
+                        continue
+                    for d in dirs:
+                        if d.lower() == query_clean or query_clean in d.lower():
+                            matched = os.path.join(current_root, d)
+                            logger.info(f"Real-time walk match found: {matched}")
+                            return matched
+            except Exception as e:
+                logger.warning(f"Error scanning directory root '{root}': {str(e)}")
+
+        return None
+
+    def open_folder_in_explorer(self, folder_path_or_name: str) -> str:
+        """
+        Resolves folder path in real time and opens Windows File Explorer directly.
+        """
+        resolved_path = self.find_local_folder(folder_path_or_name)
+        if not resolved_path:
+            # Fallback check if it's a current workspace folder name
+            resolved_path = folder_path_or_name
+
+        logger.info(f"Opening folder path in File Explorer: '{resolved_path}'")
+        try:
+            if sys.platform == "win32":
+                if os.path.exists(resolved_path):
+                    os.startfile(resolved_path)
+                else:
+                    subprocess.Popen(f'explorer "{resolved_path}"', shell=True)
+            else:
+                subprocess.Popen(["xdg-open", resolved_path])
+            return f"Opened folder '{os.path.basename(resolved_path)}' ({resolved_path}) in File Explorer."
+        except Exception as e:
+            logger.error(f"Failed to open folder '{resolved_path}': {str(e)}")
+            return f"Failed to open folder '{resolved_path}': {str(e)}"
 
     def focus_window_by_name(self, name_query: str) -> bool:
         """
@@ -225,13 +316,14 @@ class SystemService:
         return result
 
     def get_system_context(self) -> Dict[str, Any]:
-        """Returns unified system metrics and active window state for AI context."""
+        """Returns unified system metrics, active window, and running apps for AI context."""
         metrics = self.get_system_metrics()
         active_window = self.get_active_window()
 
         return {
             "metrics": metrics,
             "active_window": active_window,
+            "running_apps": self.list_running_applications(),
             "os": sys.platform
         }
 

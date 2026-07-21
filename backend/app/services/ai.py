@@ -18,31 +18,33 @@ The JSON schema must be exactly:
   "actions": [
      // List of actions to execute in order. Leave empty [] if no actions are needed.
      // Valid action structures:
-     // 1. Open/launch system apps or bring opened windows to front view:
+     // 1. Open a local folder or directory in Windows File Explorer:
+     //    { "type": "open_folder", "path": "Atlas_First_Task" }
+     // 2. Open/launch system apps or bring opened windows to front view:
      //    { "type": "open_app", "app": "notepad" }  // or "calculator", "browser", "chrome", "edge", "vscode", "explorer"
-     // 2. Focus existing window by title/name:
+     // 3. Focus existing window by title/name:
      //    { "type": "focus_app", "name": "Chrome" }
-     // 3. Test WiFi / Network Speed:
+     // 4. Test WiFi / Network Speed:
      //    { "type": "wifi_speed" }
-     // 4. Shell commands:
+     // 5. Shell commands:
      //    { "type": "shell", "command": "start notepad" }
-     // 5. Desktop screen capture:
+     // 6. Desktop screen capture:
      //    { "type": "screenshot" }
-     // 6. Web automation:
+     // 7. Web automation:
      //    { "type": "browser", "url": "https://news.ycombinator.com" }
-     // 7. Extract screen text (OCR):
+     // 8. Extract screen text (OCR):
      //    { "type": "read_screen_text" }
-     // 8. Visual element click:
+     // 9. Visual element click:
      //    { "type": "click_element", "description": "The center of the blue login button" }
   ]
 }
 
-Example user prompt: "What is my wifi speed?"
+Example user prompt: "Open folder Atlas_First_Task"
 Example response:
 {
-  "response": "Checking your real-time network speed now.",
+  "response": "Opening the Atlas_First_Task folder for you.",
   "actions": [
-    { "type": "wifi_speed" }
+    { "type": "open_folder", "path": "Atlas_First_Task" }
   ]
 }
 """

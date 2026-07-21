@@ -141,9 +141,18 @@ async def websocket_endpoint(websocket: WebSocket):
                             "session_id": session_id
                         })
                 
-                # 2. Persist user prompt to DB
+                # 2. Persist user prompt to DB and load full session history
                 db_service.save_message(db, session_id, "user", prompt)
                 
+                # Retrieve full session history directly from database
+                db_messages = db_service.get_session_history(db, session_id)
+                history = [{"sender": m.sender, "content": m.content} for m in db_messages[:-1]]
+
+                # Attach real-time system state (active window, processes, metrics)
+                realtime_sys = system_service.get_system_context()
+                sys_context_str = f"[Real-Time System Context]: Active Window: '{realtime_sys['active_window']['title']}', Running Apps: {', '.join(realtime_sys['running_apps'][:5])}"
+                history.insert(0, {"sender": "atlas", "content": sys_context_str})
+
                 # Send running status to UI
                 await websocket.send_json({
                   "type": "execution_status",
@@ -193,7 +202,30 @@ async def websocket_endpoint(websocket: WebSocket):
                         
                     action_type = action.get("type")
                     
-                    if action_type == "wifi_speed":
+                    if action_type == "open_folder":
+                        folder_path = action.get("path", "")
+                        await websocket.send_json({
+                            "type": "execution_status",
+                            "step": step_idx,
+                            "status": "RUNNING",
+                            "description": f"Searching and opening folder: {folder_path}"
+                        })
+                        result_msg = system_service.open_folder_in_explorer(folder_path)
+                        await websocket.send_json({
+                            "type": "execution_status",
+                            "step": step_idx,
+                            "status": "SUCCESS",
+                            "description": result_msg
+                        })
+                        
+                        # Dispatch Action Completion Message into chat thread
+                        await websocket.send_json({
+                            "type": "chat_token",
+                            "token": f"\n\n[Action Completed]: {result_msg}"
+                        })
+                        db_service.save_message(db, session_id, "atlas", f"[Action Completed]: {result_msg}")
+
+                    elif action_type == "wifi_speed":
                         await websocket.send_json({
                             "type": "execution_status",
                             "step": step_idx,

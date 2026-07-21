@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import sys
+import subprocess
 
 logger = logging.getLogger("atlas-backend")
 
@@ -12,14 +14,21 @@ DANGEROUS_KEYWORDS = [
 ]
 
 async def execute_command(command: str) -> str:
-    """Runs a shell command asynchronously and returns stdout/stderr logs."""
+    """Runs a shell command asynchronously and returns stdout/stderr logs silently without popping console windows."""
     logger.info(f"Executing subprocess command: '{command}'")
     try:
-        # Spawn async subprocess shell
+        kwargs = {
+            "stdout": asyncio.subprocess.PIPE,
+            "stderr": asyncio.subprocess.PIPE
+        }
+        
+        # Suppress console pop-up windows on Windows OS
+        if sys.platform == "win32":
+            kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+
         process = await asyncio.create_subprocess_shell(
             command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            **kwargs
         )
         stdout, stderr = await process.communicate()
 

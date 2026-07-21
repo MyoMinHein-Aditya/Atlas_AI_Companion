@@ -64,7 +64,13 @@ function createWindow() {
   });
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    const loadDevServer = () => {
+      mainWindow?.loadURL('http://localhost:5173').catch(() => {
+        console.log('[Electron Main] Waiting for Vite dev server on http://localhost:5173...');
+        setTimeout(loadDevServer, 1000);
+      });
+    };
+    loadDevServer();
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     mainWindow.loadFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));

@@ -50,16 +50,27 @@ function startBackend() {
 }
 
 function createWindow() {
+  const distPath = path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html');
+
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    frame: false, // frameless window for custom 2035 visual aesthetics
-    transparent: true, // enables glassmorphism transparency layers
-    backgroundColor: '#00000000', // transparent hex
+    width: 1000,
+    height: 700,
+    minWidth: 800,
+    minHeight: 500,
+    show: false,
+    frame: false,
+    backgroundColor: '#09090b',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false
+    }
+  });
+
+  mainWindow.once('ready-to-show', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
     }
   });
 
@@ -68,18 +79,18 @@ function createWindow() {
     const loadDevServer = () => {
       mainWindow?.loadURL('http://localhost:5173').catch(() => {
         retries++;
-        if (retries < 5) {
-          console.log('[Electron Main] Waiting for Vite dev server on http://localhost:5173...');
+        if (retries < 3) {
+          console.log('[Electron Main] Retrying Vite dev server on http://localhost:5173...');
           setTimeout(loadDevServer, 1000);
         } else {
-          console.log('[Electron Main] Vite dev server offline. Falling back to built static frontend...');
-          mainWindow?.loadFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));
+          console.log('[Electron Main] Vite server offline. Loading static built frontend...');
+          mainWindow?.loadFile(distPath);
         }
       });
     };
     loadDevServer();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));
+    mainWindow.loadFile(distPath);
   }
 
   mainWindow.on('closed', () => {

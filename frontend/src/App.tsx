@@ -274,7 +274,7 @@ function App() {
                 </button>
               </div>
 
-              {/* 1. Theme Slider Option */}
+              {/* 1. Theme Toggle Button Option */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs font-mono">
                   <span className="flex items-center gap-1.5">
@@ -283,19 +283,22 @@ function App() {
                   </span>
                   <span className="uppercase text-[10px] text-zinc-400 font-bold">{themeMode} MODE</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-mono text-zinc-400">DARK</span>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="1" 
-                    step="1"
-                    value={themeMode === 'dark' ? 0 : 1}
-                    onChange={(e) => setThemeMode(e.target.value === '0' ? 'dark' : 'light')}
-                    className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-zinc-200"
-                  />
-                  <span className="text-[10px] font-mono text-zinc-400">LIGHT</span>
-                </div>
+                <button
+                  onClick={() => setThemeMode(isLight ? 'dark' : 'light')}
+                  className={`w-full py-2.5 px-4 rounded-lg border flex items-center justify-between font-mono text-xs transition-colors ${
+                    isLight 
+                      ? 'bg-zinc-100 border-zinc-300 text-zinc-900 hover:bg-zinc-200' 
+                      : 'bg-zinc-950 border-zinc-800 text-zinc-100 hover:bg-zinc-800'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    {isLight ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    <span>TOGGLE TO {isLight ? 'DARK' : 'LIGHT'} MODE</span>
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-800 text-zinc-200">
+                    {isLight ? 'LIGHT' : 'DARK'}
+                  </span>
+                </button>
               </div>
 
               {/* 2. Voice Mode & Volume Slider Option */}

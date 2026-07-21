@@ -193,7 +193,31 @@ async def websocket_endpoint(websocket: WebSocket):
                         
                     action_type = action.get("type")
                     
-                    if action_type == "open_app":
+                    if action_type == "wifi_speed":
+                        await websocket.send_json({
+                            "type": "execution_status",
+                            "step": step_idx,
+                            "status": "RUNNING",
+                            "description": "Measuring real-time WiFi / Network speed..."
+                        })
+                        speed_res = await system_service.run_speed_test()
+                        summary = speed_res.get("summary", "Network test completed.")
+                        await websocket.send_json({
+                            "type": "execution_status",
+                            "step": step_idx,
+                            "status": "SUCCESS",
+                            "description": summary
+                        })
+                        
+                        # Dispatch Action Completion Message into chat thread
+                        completed_msg = f"Network Speed Test Completed — {summary}"
+                        await websocket.send_json({
+                            "type": "chat_token",
+                            "token": f"\n\n[Action Completed]: {completed_msg}"
+                        })
+                        db_service.save_message(db, session_id, "atlas", f"[Action Completed]: {completed_msg}")
+
+                    elif action_type == "open_app":
                         app_name = action.get("app", "")
                         await websocket.send_json({
                             "type": "execution_status",
@@ -208,6 +232,13 @@ async def websocket_endpoint(websocket: WebSocket):
                             "status": "SUCCESS",
                             "description": result_msg
                         })
+                        
+                        # Dispatch Action Completion Message into chat thread
+                        await websocket.send_json({
+                            "type": "chat_token",
+                            "token": f"\n\n[Action Completed]: {result_msg}"
+                        })
+                        db_service.save_message(db, session_id, "atlas", f"[Action Completed]: {result_msg}")
 
                     elif action_type == "focus_app":
                         name_query = action.get("name", "")
@@ -226,6 +257,13 @@ async def websocket_endpoint(websocket: WebSocket):
                             "status": status,
                             "description": msg
                         })
+                        
+                        # Dispatch Action Completion Message into chat thread
+                        await websocket.send_json({
+                            "type": "chat_token",
+                            "token": f"\n\n[Action Completed]: {msg}"
+                        })
+                        db_service.save_message(db, session_id, "atlas", f"[Action Completed]: {msg}")
 
                     elif action_type == "shell":
                         command = action.get("command", "")

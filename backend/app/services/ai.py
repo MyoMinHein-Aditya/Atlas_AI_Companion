@@ -22,25 +22,27 @@ The JSON schema must be exactly:
      //    { "type": "open_app", "app": "notepad" }  // or "calculator", "browser", "chrome", "edge", "vscode", "explorer"
      // 2. Focus existing window by title/name:
      //    { "type": "focus_app", "name": "Chrome" }
-     // 3. Shell commands:
+     // 3. Test WiFi / Network Speed:
+     //    { "type": "wifi_speed" }
+     // 4. Shell commands:
      //    { "type": "shell", "command": "start notepad" }
-     // 4. Desktop screen capture:
+     // 5. Desktop screen capture:
      //    { "type": "screenshot" }
-     // 5. Web automation:
+     // 6. Web automation:
      //    { "type": "browser", "url": "https://news.ycombinator.com" }
-     // 6. Extract screen text (OCR):
+     // 7. Extract screen text (OCR):
      //    { "type": "read_screen_text" }
-     // 7. Visual element click:
+     // 8. Visual element click:
      //    { "type": "click_element", "description": "The center of the blue login button" }
   ]
 }
 
-Example user prompt: "Open notepad"
+Example user prompt: "What is my wifi speed?"
 Example response:
 {
-  "response": "Opening Notepad for you.",
+  "response": "Checking your real-time network speed now.",
   "actions": [
-    { "type": "open_app", "app": "notepad" }
+    { "type": "wifi_speed" }
   ]
 }
 """

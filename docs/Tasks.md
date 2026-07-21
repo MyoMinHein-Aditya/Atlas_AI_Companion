@@ -70,12 +70,11 @@ This is the living document tracking all micro-tasks across development phases.
 
 ---
 
-## Phase 6: System Control, Auto-Approval & Settings Refinement (Completed)
+## Phase 6: System Control, WiFi Speed Test & Action Completion Logging (Completed)
 
-- [x] Added native Windows `user32` `EnumWindows` & `SetForegroundWindow` window focusing in `backend/app/services/system.py`
-- [x] Added `launch_system_app` for launching default Windows system applications (`start notepad`, `start calc`, `start msedge`, `start explorer`, etc.)
-- [x] Reduced token streaming sleep from `0.05s` to `0.005s` for ultra-fast chat responses
-- [x] Added Auto-Approval logic for safe app launching & execution actions
-- [x] Created Settings Modal with **Theme Slider (Light/Dark Mode)**, **Voice Mode Slider**, and **Auto-Approve Toggle** in React UI
-- [x] Added `tests/test_app_focus.py` unit test suite (15/15 tests passing)
+- [x] Added `async def run_speed_test()` in `backend/app/services/system.py` measuring Ping, Download Mbps, and Upload Mbps
+- [x] Added `"wifi_speed"` action type in `backend/app/services/ai.py` and action handler in `backend/app/main.py`
+- [x] Updated WebSocket execution loop in `backend/app/main.py` to stream and persist explicit **Action Completed** messages in the chat thread
+- [x] Replaced Theme slider with a clean **Theme Toggle Button** in `frontend/src/App.tsx`
+- [x] Added `tests/test_speedtest.py` unit test suite (16/16 tests passing)
 - [x] Synchronized remote repository `https://github.com/MyoMinHein-Aditya/Atlas_AI_Companion.git`

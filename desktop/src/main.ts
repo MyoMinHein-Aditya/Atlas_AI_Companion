@@ -64,14 +64,20 @@ function createWindow() {
   });
 
   if (isDev) {
+    let retries = 0;
     const loadDevServer = () => {
       mainWindow?.loadURL('http://localhost:5173').catch(() => {
-        console.log('[Electron Main] Waiting for Vite dev server on http://localhost:5173...');
-        setTimeout(loadDevServer, 1000);
+        retries++;
+        if (retries < 5) {
+          console.log('[Electron Main] Waiting for Vite dev server on http://localhost:5173...');
+          setTimeout(loadDevServer, 1000);
+        } else {
+          console.log('[Electron Main] Vite dev server offline. Falling back to built static frontend...');
+          mainWindow?.loadFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));
+        }
       });
     };
     loadDevServer();
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     mainWindow.loadFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));
   }

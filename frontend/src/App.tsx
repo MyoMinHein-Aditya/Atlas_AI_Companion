@@ -24,6 +24,147 @@ interface ExecutionLog {
   description: string;
 }
 
+/* Sub-Component: Settings Modal */
+function SettingsModal({ 
+  open, 
+  onClose, 
+  isLight, 
+  themeMode, 
+  setThemeMode, 
+  voiceEnabled, 
+  setVoiceEnabled, 
+  voiceVolume, 
+  setVoiceVolume, 
+  autoApprove, 
+  setAutoApprove 
+}: any) {
+  if (!open) return null;
+  return (
+    <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-6 z-50">
+      <motion.div 
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className={`max-w-md w-full border rounded-xl p-6 shadow-2xl flex flex-col gap-6 ${
+          isLight ? 'bg-white border-zinc-300 text-zinc-900' : 'bg-zinc-900 border-zinc-800 text-zinc-100'
+        }`}
+      >
+        <div className="flex items-center justify-between border-b pb-3 border-zinc-800">
+          <div className="flex items-center gap-2 font-mono text-xs font-bold tracking-wider">
+            <Sliders className="h-4 w-4" />
+            SYSTEM CONFIGURATION SETTINGS
+          </div>
+          <button onClick={onClose} className="p-1 hover:bg-zinc-800 rounded">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between items-center text-xs font-mono">
+            <span className="flex items-center gap-1.5">
+              {isLight ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+              THEME MODE
+            </span>
+            <span className="uppercase text-[10px] text-zinc-400 font-bold">{themeMode} MODE</span>
+          </div>
+          <button
+            onClick={() => setThemeMode(isLight ? 'dark' : 'light')}
+            className={`w-full py-2.5 px-4 rounded-lg border flex items-center justify-between font-mono text-xs transition-colors ${
+              isLight ? 'bg-zinc-100 border-zinc-300 text-zinc-900 hover:bg-zinc-200' : 'bg-zinc-950 border-zinc-800 text-zinc-100 hover:bg-zinc-800'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              {isLight ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              <span>TOGGLE TO {isLight ? 'DARK' : 'LIGHT'} MODE</span>
+            </span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-800 text-zinc-200">
+              {isLight ? 'LIGHT' : 'DARK'}
+            </span>
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between items-center text-xs font-mono">
+            <span className="flex items-center gap-1.5">
+              {voiceEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+              VOICE OUTPUT MODE
+            </span>
+            <span className="text-[10px] text-zinc-400 font-bold">{voiceEnabled ? `${voiceVolume}%` : 'MUTED'}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setVoiceEnabled(!voiceEnabled)}
+              className={`px-2 py-1 rounded text-[10px] font-mono border ${voiceEnabled ? 'bg-zinc-800 text-zinc-100 border-zinc-600' : 'bg-transparent text-zinc-500 border-zinc-800'}`}
+            >
+              {voiceEnabled ? 'ENABLED' : 'DISABLED'}
+            </button>
+            <input 
+              type="range" 
+              min="0" 
+              max="100" 
+              value={voiceEnabled ? voiceVolume : 0}
+              disabled={!voiceEnabled}
+              onChange={(e) => setVoiceVolume(Number(e.target.value))}
+              className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-zinc-200 disabled:opacity-30"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between items-center text-xs font-mono">
+            <span>AUTO-APPROVE COMMANDS</span>
+            <span className="text-[10px] text-zinc-400 font-bold">{autoApprove ? 'ON' : 'OFF'}</span>
+          </div>
+          <div className="flex items-center justify-between p-2.5 rounded border border-zinc-800 bg-zinc-950 text-xs font-mono">
+            <span className="text-[11px] text-zinc-400">Execute safe app launches & commands without pop-up prompts</span>
+            <input 
+              type="checkbox" 
+              checked={autoApprove}
+              onChange={(e) => setAutoApprove(e.target.checked)}
+              className="h-4 w-4 cursor-pointer accent-zinc-200"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <button onClick={onClose} className={`px-4 py-2 rounded-lg text-xs font-mono font-semibold ${isLight ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-950'}`}>
+            SAVE & CLOSE
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* Sub-Component: Chat Message Item */
+function ChatMessageItem({ msg, isLight, isGenerating }: { msg: Message; isLight: boolean; isGenerating: boolean }) {
+  return (
+    <motion.div
+      initial={{ y: 10, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
+      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+    >
+      <div 
+        className={`max-w-[75%] px-4 py-3 rounded-xl border text-sm leading-relaxed ${
+          msg.sender === 'user'
+            ? isLight ? 'bg-zinc-900 border-zinc-900 text-white rounded-br-none' : 'bg-zinc-900 border-zinc-700 text-zinc-100 rounded-br-none'
+            : isLight ? 'bg-white border-zinc-300 text-zinc-900 rounded-bl-none shadow-sm' : 'bg-zinc-900/40 border-zinc-800 text-zinc-200 rounded-bl-none'
+        }`}
+      >
+        {msg.content === '' && isGenerating ? (
+          <div className="flex items-center gap-2 py-1 text-zinc-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-xs font-mono">Formulating...</span>
+          </div>
+        ) : (
+          msg.content
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 function App() {
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -33,82 +174,50 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Sessions and navigation states
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Settings State (Theme, Voice Mode, Auto-Approval)
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark'); // 'dark' or 'light'
+  const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark');
   const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [voiceVolume, setVoiceVolume] = useState(80); // 0 to 100
+  const [voiceVolume, setVoiceVolume] = useState(80);
   const [autoApprove, setAutoApprove] = useState(true);
 
-  // Security Approval state
   const [pendingApproval, setPendingApproval] = useState<{ command: string; step: number } | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Connect to FastAPI local WebSocket server
   const connectWebSocket = () => {
-    console.log('Connecting to WebSocket...');
     const ws = new WebSocket('ws://localhost:8000/ws/stream');
-
-    ws.onopen = () => {
-      console.log('WebSocket connected.');
-      setIsConnected(true);
-    };
-
+    ws.onopen = () => setIsConnected(true);
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('WebSocket message received:', data);
-
         if (data.type === 'chat_token') {
           setMessages((prev) => {
             const last = prev[prev.length - 1];
-            if (last && last.sender === 'atlas') {
-              return [
-                ...prev.slice(0, -1),
-                { sender: 'atlas', content: last.content + data.token }
-              ];
-            } else {
-              return [...prev, { sender: 'atlas', content: data.token }];
-            }
+            return (last && last.sender === 'atlas')
+              ? [...prev.slice(0, -1), { sender: 'atlas', content: last.content + data.token }]
+              : [...prev, { sender: 'atlas', content: data.token }];
           });
         } else if (data.type === 'session_created') {
           setActiveSessionId(data.session_id);
           fetchSessions();
         } else if (data.type === 'approval_required') {
-          if (autoApprove) {
-            handleApproval(true);
-          } else {
-            setPendingApproval({
-              command: data.command,
-              step: data.step
-            });
-          }
+          autoApprove ? handleApproval(true) : setPendingApproval({ command: data.command, step: data.step });
         } else if (data.type === 'execution_status') {
           setIsGenerating(true);
           setLogs((prev) => {
-            const index = prev.findIndex((log) => log.step === data.step);
+            const index = prev.findIndex((l) => l.step === data.step);
             if (index !== -1) {
               const updated = [...prev];
-              updated[index] = {
-                step: data.step,
-                status: data.status,
-                description: data.description
-              };
+              updated[index] = { step: data.step, status: data.status, description: data.description };
               return updated;
-            } else {
-              return [
-                ...prev,
-                { step: data.step, status: data.status, description: data.description }
-              ];
             }
+            return [...prev, { step: data.step, status: data.status, description: data.description }];
           });
           if (data.status === 'SUCCESS' || data.status === 'ERROR') {
             setIsGenerating(false);
@@ -116,34 +225,23 @@ function App() {
           }
         }
       } catch (err) {
-        console.error('Failed to parse WebSocket message:', err);
+        console.error('WebSocket parse error:', err);
       }
     };
-
     ws.onclose = () => {
-      console.log('WebSocket closed. Retrying in 3s...');
       setIsConnected(false);
       setIsGenerating(false);
       setTimeout(connectWebSocket, 3000);
     };
-
-    ws.onerror = (err) => {
-      console.error('WebSocket encountered an error:', err);
-      ws.close();
-    };
-
     socketRef.current = ws;
   };
 
   const fetchSessions = async () => {
     try {
       const res = await fetch('http://localhost:8000/api/sessions');
-      if (res.ok) {
-        const data = await res.json();
-        setSessions(data);
-      }
+      if (res.ok) setSessions(await res.json());
     } catch (err) {
-      console.error('Failed to fetch sessions history:', err);
+      console.error('Fetch sessions failed:', err);
     }
   };
 
@@ -152,445 +250,170 @@ function App() {
       const res = await fetch(`http://localhost:8000/api/sessions/${sessionId}/messages`);
       if (res.ok) {
         const data = await res.json();
-        setMessages(data.length > 0 ? data : [
-          { sender: 'atlas', content: 'Empty session. Instruct Atlas to start logging.' }
-        ]);
+        setMessages(data.length > 0 ? data : [{ sender: 'atlas', content: 'Empty session.' }]);
         setActiveSessionId(sessionId);
         setLogs([]);
       }
     } catch (err) {
-      console.error('Failed to load session details:', err);
+      console.error('Load session failed:', err);
     }
   };
 
   const startNewSession = () => {
     setActiveSessionId(null);
-    setMessages([
-      { sender: 'atlas', content: 'New session started. How can I assist you today?' }
-    ]);
+    setMessages([{ sender: 'atlas', content: 'New session started. How can I assist you today?' }]);
     setLogs([]);
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    inputRef.current?.focus();
   };
 
   useEffect(() => {
     connectWebSocket();
     fetchSessions();
-
-    if (window.electron && window.electron.onSummon) {
-      const unsubscribe = window.electron.onSummon(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
-      });
-      return unsubscribe;
-    }
-
+    const unsubscribe = window.electron?.onSummon?.(() => inputRef.current?.focus());
     return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
+      unsubscribe?.();
+      socketRef.current?.close();
     };
   }, []);
 
-  // Auto-scroll chat window to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, logs]);
 
   const handleSend = () => {
     if (!prompt.trim()) return;
-
-    const historyPayload = messages.map(m => ({ sender: m.sender, content: m.content }));
-
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
       setMessages((prev) => [...prev, { sender: 'user', content: prompt }]);
-      
       socketRef.current.send(JSON.stringify({
         type: 'text_prompt',
         content: prompt,
         session_id: activeSessionId,
-        history: historyPayload
+        history: messages.map(m => ({ sender: m.sender, content: m.content }))
       }));
-
       setMessages((prev) => [...prev, { sender: 'atlas', content: '' }]);
       setLogs([]);
       setPrompt('');
       setIsGenerating(true);
-    } else {
-      setMessages((prev) => [
-        ...prev,
-        { sender: 'user', content: prompt },
-        { sender: 'atlas', content: 'Connection unavailable. Please verify that the backend server is running.' }
-      ]);
-      setPrompt('');
     }
   };
 
-  // Dispatch User Approval Response over WebSockets
   const handleApproval = (approved: boolean) => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({
-        type: 'approval_response',
-        approved: approved
-      }));
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ type: 'approval_response', approved }));
     }
     setPendingApproval(null);
   };
-
-  const handleMinimize = () => window.electron?.minimize?.();
-  const handleMaximize = () => window.electron?.maximize?.();
-  const handleClose = () => window.electron?.close?.();
 
   const isLight = themeMode === 'light';
 
   return (
     <div className={`flex h-screen w-screen select-none overflow-hidden border rounded-xl relative transition-colors duration-200 ${
-      isLight 
-        ? 'bg-zinc-50 border-zinc-300 text-zinc-900' 
-        : 'bg-zinc-950 border-zinc-800 text-zinc-100'
+      isLight ? 'bg-zinc-50 border-zinc-300 text-zinc-900' : 'bg-zinc-950 border-zinc-800 text-zinc-100'
     }`}>
       
-      {/* Settings Modal Drawer */}
-      <AnimatePresence>
-        {settingsOpen && (
-          <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-6 z-50">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className={`max-w-md w-full border rounded-xl p-6 shadow-2xl flex flex-col gap-6 ${
-                isLight ? 'bg-white border-zinc-300 text-zinc-900' : 'bg-zinc-900 border-zinc-800 text-zinc-100'
-              }`}
-            >
-              <div className="flex items-center justify-between border-b pb-3 border-zinc-800">
-                <div className="flex items-center gap-2 font-mono text-xs font-bold tracking-wider">
-                  <Sliders className="h-4 w-4" />
-                  SYSTEM CONFIGURATION SETTINGS
-                </div>
-                <button onClick={() => setSettingsOpen(false)} className="p-1 hover:bg-zinc-800 rounded">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+      <SettingsModal 
+        open={settingsOpen} 
+        onClose={() => setSettingsOpen(false)} 
+        isLight={isLight}
+        themeMode={themeMode}
+        setThemeMode={setThemeMode}
+        voiceEnabled={voiceEnabled}
+        setVoiceEnabled={setVoiceEnabled}
+        voiceVolume={voiceVolume}
+        setVoiceVolume={setVoiceVolume}
+        autoApprove={autoApprove}
+        setAutoApprove={setAutoApprove}
+      />
 
-              {/* 1. Theme Toggle Button Option */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs font-mono">
-                  <span className="flex items-center gap-1.5">
-                    {isLight ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-                    THEME MODE
-                  </span>
-                  <span className="uppercase text-[10px] text-zinc-400 font-bold">{themeMode} MODE</span>
-                </div>
-                <button
-                  onClick={() => setThemeMode(isLight ? 'dark' : 'light')}
-                  className={`w-full py-2.5 px-4 rounded-lg border flex items-center justify-between font-mono text-xs transition-colors ${
-                    isLight 
-                      ? 'bg-zinc-100 border-zinc-300 text-zinc-900 hover:bg-zinc-200' 
-                      : 'bg-zinc-950 border-zinc-800 text-zinc-100 hover:bg-zinc-800'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    {isLight ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                    <span>TOGGLE TO {isLight ? 'DARK' : 'LIGHT'} MODE</span>
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-800 text-zinc-200">
-                    {isLight ? 'LIGHT' : 'DARK'}
-                  </span>
-                </button>
-              </div>
-
-              {/* 2. Voice Mode & Volume Slider Option */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs font-mono">
-                  <span className="flex items-center gap-1.5">
-                    {voiceEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-                    VOICE OUTPUT MODE
-                  </span>
-                  <span className="text-[10px] text-zinc-400 font-bold">{voiceEnabled ? `${voiceVolume}%` : 'MUTED'}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => setVoiceEnabled(!voiceEnabled)}
-                    className={`px-2 py-1 rounded text-[10px] font-mono border ${voiceEnabled ? 'bg-zinc-800 text-zinc-100 border-zinc-600' : 'bg-transparent text-zinc-500 border-zinc-800'}`}
-                  >
-                    {voiceEnabled ? 'ENABLED' : 'DISABLED'}
-                  </button>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    value={voiceEnabled ? voiceVolume : 0}
-                    disabled={!voiceEnabled}
-                    onChange={(e) => setVoiceVolume(Number(e.target.value))}
-                    className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-zinc-200 disabled:opacity-30"
-                  />
-                </div>
-              </div>
-
-              {/* 3. Auto-Approve Commands Option */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs font-mono">
-                  <span>AUTO-APPROVE COMMANDS</span>
-                  <span className="text-[10px] text-zinc-400 font-bold">{autoApprove ? 'ON' : 'OFF'}</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 rounded border border-zinc-800 bg-zinc-950 text-xs font-mono">
-                  <span className="text-[11px] text-zinc-400">Execute safe app launches & commands without pop-up prompts</span>
-                  <input 
-                    type="checkbox" 
-                    checked={autoApprove}
-                    onChange={(e) => setAutoApprove(e.target.checked)}
-                    className="h-4 w-4 cursor-pointer accent-zinc-200"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  onClick={() => setSettingsOpen(false)}
-                  className={`px-4 py-2 rounded-lg text-xs font-mono font-semibold ${
-                    isLight ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-950'
-                  }`}
-                >
-                  SAVE & CLOSE
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Security Consent Overlay Modal */}
+      {/* Security Approval Overlay */}
       <AnimatePresence>
         {pendingApproval && !autoApprove && (
           <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-6 z-50">
-            <motion.div 
-              initial={{ scale: 0.98, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.98, opacity: 0 }}
-              className={`max-w-md w-full border rounded-xl p-6 shadow-2xl flex flex-col gap-4 ${
-                isLight ? 'bg-white border-zinc-300 text-zinc-900' : 'bg-zinc-900 border-zinc-800 text-zinc-100'
-              }`}
-            >
+            <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.98, opacity: 0 }} className={`max-w-md w-full border rounded-xl p-6 shadow-2xl flex flex-col gap-4 ${isLight ? 'bg-white border-zinc-300 text-zinc-900' : 'bg-zinc-900 border-zinc-800 text-zinc-100'}`}>
               <div className="flex items-center gap-2 font-mono text-xs font-bold">
                 <ShieldAlert className="h-4 w-4 text-zinc-400" />
                 SECURITY AUTHORIZATION REQUEST
               </div>
-              
-              <div className="text-xs text-zinc-400 leading-relaxed font-sans">
-                Atlas is requesting permission to execute the following command:
-              </div>
-              
+              <div className="text-xs text-zinc-400">Atlas is requesting permission to execute:</div>
               <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 font-mono text-xs text-zinc-200 select-text overflow-x-auto break-all max-h-36 custom-scrollbar">
                 $ {pendingApproval.command}
               </div>
-              
-              <div className="flex items-center justify-end gap-3 mt-2">
-                <button
-                  onClick={() => handleApproval(false)}
-                  className="px-4 py-2 rounded-lg border border-zinc-700 text-xs font-mono text-zinc-400 hover:text-zinc-100"
-                >
-                  DENY
-                </button>
-                <button
-                  onClick={() => handleApproval(true)}
-                  className={`px-4 py-2 rounded-lg text-xs font-mono font-semibold ${
-                    isLight ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-950'
-                  }`}
-                >
-                  APPROVE
-                </button>
+              <div className="flex justify-end gap-3 mt-2">
+                <button onClick={() => handleApproval(false)} className="px-4 py-2 rounded-lg border border-zinc-700 text-xs font-mono text-zinc-400">DENY</button>
+                <button onClick={() => handleApproval(true)} className={`px-4 py-2 rounded-lg text-xs font-mono font-semibold ${isLight ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-950'}`}>APPROVE</button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Collapsible Left Conversations Sidebar */}
+      {/* Sidebar */}
       <AnimatePresence initial={false}>
         {sidebarOpen && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 240, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`h-full border-r flex flex-col z-20 overflow-hidden ${
-              isLight ? 'bg-zinc-100 border-zinc-300' : 'bg-zinc-950 border-zinc-800'
-            }`}
-          >
+          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 240, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.2 }} className={`h-full border-r flex flex-col z-20 overflow-hidden ${isLight ? 'bg-zinc-100 border-zinc-300' : 'bg-zinc-950 border-zinc-800'}`}>
             <div className={`p-4 border-b flex items-center justify-between ${isLight ? 'border-zinc-300' : 'border-zinc-800'}`}>
               <span className="text-[10px] tracking-[0.2em] font-bold font-mono text-zinc-400">HISTORY</span>
-              
-              <button 
-                onClick={startNewSession}
-                className={`p-1 border rounded transition-colors ${
-                  isLight ? 'hover:bg-zinc-200 border-zinc-300 text-zinc-700' : 'hover:bg-zinc-800 border-zinc-800 text-zinc-400'
-                }`}
-                title="New Chat"
-              >
+              <button onClick={startNewSession} className={`p-1 border rounded ${isLight ? 'hover:bg-zinc-200 border-zinc-300 text-zinc-700' : 'hover:bg-zinc-800 border-zinc-800 text-zinc-400'}`}>
                 <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
-
-            {/* List of chat sessions */}
             <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-              {sessions.length === 0 ? (
-                <div className="text-[10px] font-mono text-zinc-500 text-center py-6">
-                  No sessions recorded
-                </div>
-              ) : (
-                sessions.map((session) => {
-                  const isActive = session.id === activeSessionId;
-                  return (
-                    <button
-                      key={session.id}
-                      onClick={() => loadSession(session.id)}
-                      className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-2.5 border transition-all text-xs ${
-                        isActive
-                          ? isLight ? 'bg-zinc-200 border-zinc-400 text-zinc-900' : 'bg-zinc-900 border-zinc-700 text-zinc-100'
-                          : isLight ? 'text-zinc-600 hover:bg-zinc-200/60' : 'text-zinc-400 hover:bg-zinc-900/60'
-                      }`}
-                    >
-                      <MessageSquare className={`h-3.5 w-3.5 shrink-0 ${isActive ? (isLight ? 'text-zinc-900' : 'text-zinc-100') : 'text-zinc-500'}`} />
-                      <span className="truncate pr-1 font-sans">{session.title || 'Untitled Session'}</span>
-                    </button>
-                  );
-                })
-              )}
+              {sessions.map((s) => (
+                <button key={s.id} onClick={() => loadSession(s.id)} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-2.5 border transition-all text-xs ${s.id === activeSessionId ? (isLight ? 'bg-zinc-200 border-zinc-400 text-zinc-900' : 'bg-zinc-900 border-zinc-700 text-zinc-100') : (isLight ? 'text-zinc-600 hover:bg-zinc-200/60' : 'text-zinc-400 hover:bg-zinc-900/60')}`}>
+                  <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{s.title || 'Untitled Session'}</span>
+                </button>
+              ))}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main chat window section */}
+      {/* Main Panel */}
       <div className={`flex-1 flex flex-col h-full relative overflow-hidden ${isLight ? 'bg-zinc-50' : 'bg-zinc-950'}`}>
-
-        {/* Custom Window Title Bar */}
-        <div className={`flex items-center justify-between px-4 py-3 border-b drag-region select-none z-10 ${
-          isLight ? 'bg-zinc-100 border-zinc-300' : 'bg-zinc-950 border-zinc-800'
-        }`}>
+        
+        {/* Title Bar */}
+        <div className={`flex items-center justify-between px-4 py-3 border-b drag-region select-none z-10 ${isLight ? 'bg-zinc-100 border-zinc-300' : 'bg-zinc-950 border-zinc-800'}`}>
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-1 hover:bg-zinc-800/20 rounded transition-colors text-zinc-400 hover:text-zinc-200"
-              title="Toggle Sidebar"
-            >
-              <Menu className="h-4 w-4" />
-            </button>
-
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 text-zinc-400 hover:text-zinc-200"><Menu className="h-4 w-4" /></button>
             <div className="flex items-center gap-2">
               <div className={`h-2 w-2 rounded-full ${isLight ? 'bg-zinc-900' : 'bg-zinc-100'}`} />
               <span className={`font-bold tracking-[0.2em] text-xs font-mono ${isLight ? 'text-zinc-900' : 'text-zinc-100'}`}>ATLAS</span>
-              <span className="text-[10px] text-zinc-500 font-mono tracking-wider">v0.1.0</span>
             </div>
           </div>
-
-          {/* Controls: Settings, Connection, Window */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className={`p-1 rounded transition-colors border text-xs font-mono flex items-center gap-1 ${
-                isLight ? 'bg-zinc-200 hover:bg-zinc-300 border-zinc-300 text-zinc-800' : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
-              }`}
-              title="Open Settings"
-            >
-              <Settings className="h-3.5 w-3.5" />
-            </button>
-
-            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-mono ${
-              isLight ? 'bg-zinc-200 border-zinc-300 text-zinc-700' : 'bg-zinc-900 border-zinc-800 text-zinc-300'
-            }`}>
-              {isConnected ? (
-                <>
-                  <Wifi className="h-3 w-3 text-emerald-500" />
-                  <span>ONLINE</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className="h-3 w-3 text-rose-500" />
-                  <span>OFFLINE</span>
-                </>
-              )}
+            <button onClick={() => setSettingsOpen(true)} className="p-1 border rounded text-xs font-mono flex items-center gap-1 border-zinc-800"><Settings className="h-3.5 w-3.5" /></button>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-mono border-zinc-800">
+              {isConnected ? <Wifi className="h-3 w-3 text-emerald-500" /> : <WifiOff className="h-3 w-3 text-rose-500" />}
+              <span>{isConnected ? 'ONLINE' : 'OFFLINE'}</span>
             </div>
-
-            {/* Window Control Buttons */}
             <div className="flex items-center gap-1.5">
-              <button onClick={handleMinimize} className="p-1 hover:bg-zinc-800/20 rounded transition-colors text-zinc-400">
-                <Minus className="h-3.5 w-3.5" />
-              </button>
-              <button onClick={handleMaximize} className="p-1 hover:bg-zinc-800/20 rounded transition-colors text-zinc-400">
-                <Square className="h-3 w-3" />
-              </button>
-              <button onClick={handleClose} className="p-1 hover:bg-zinc-800/20 rounded transition-colors text-zinc-400">
-                <X className="h-3.5 w-3.5" />
-              </button>
+              <button onClick={() => window.electron?.minimize?.()} className="p-1 text-zinc-400"><Minus className="h-3.5 w-3.5" /></button>
+              <button onClick={() => window.electron?.maximize?.()} className="p-1 text-zinc-400"><Square className="h-3 w-3" /></button>
+              <button onClick={() => window.electron?.close?.()} className="p-1 text-zinc-400"><X className="h-3.5 w-3.5" /></button>
             </div>
           </div>
         </div>
 
-        {/* Main Content Area */}
+        {/* Chat List */}
         <div className="flex-1 flex flex-col overflow-y-auto px-6 py-4 custom-scrollbar space-y-4 z-10">
           <div className="flex-1 space-y-4">
-            {messages.map((msg, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div 
-                  className={`max-w-[75%] px-4 py-3 rounded-xl border text-sm leading-relaxed ${
-                    msg.sender === 'user'
-                      ? isLight ? 'bg-zinc-900 border-zinc-900 text-white rounded-br-none' : 'bg-zinc-900 border-zinc-700 text-zinc-100 rounded-br-none'
-                      : isLight ? 'bg-white border-zinc-300 text-zinc-900 rounded-bl-none shadow-sm' : 'bg-zinc-900/40 border-zinc-800 text-zinc-200 rounded-bl-none'
-                  }`}
-                >
-                  {msg.content === '' && isGenerating ? (
-                    <div className="flex items-center gap-2 py-1 text-zinc-400">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-xs font-mono">Formulating...</span>
-                    </div>
-                  ) : (
-                    msg.content
-                  )}
-                </div>
-              </motion.div>
+            {messages.map((m, idx) => (
+              <ChatMessageItem key={idx} msg={m} isLight={isLight} isGenerating={isGenerating} />
             ))}
             <div ref={chatEndRef} />
           </div>
 
-          {/* Live Execution Logs Panel */}
+          {/* Execution Pipeline Logs */}
           <AnimatePresence>
             {logs.length > 0 && (
-              <motion.div 
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className={`border rounded-xl overflow-hidden ${
-                  isLight ? 'border-zinc-300 bg-white' : 'border-zinc-800 bg-zinc-900'
-                }`}
-              >
-                <div className={`flex items-center gap-2 px-3 py-2 border-b text-xs font-mono font-bold ${
-                  isLight ? 'bg-zinc-100 border-zinc-300 text-zinc-700' : 'bg-zinc-950 border-zinc-800 text-zinc-400'
-                }`}>
-                  <Terminal className="h-3.5 w-3.5" />
-                  EXECUTION PIPELINE
-                </div>
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className={`border rounded-xl overflow-hidden ${isLight ? 'border-zinc-300 bg-white' : 'border-zinc-800 bg-zinc-900'}`}>
+                <div className="flex items-center gap-2 px-3 py-2 border-b text-xs font-mono font-bold border-zinc-800 text-zinc-400"><Terminal className="h-3.5 w-3.5" />EXECUTION PIPELINE</div>
                 <div className="p-3 space-y-2 text-xs font-mono select-text">
-                  {logs.map((log) => (
-                    <div key={log.step} className="flex items-start gap-2.5">
-                      {log.status === 'RUNNING' ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400 mt-0.5" />
-                      ) : log.status === 'SUCCESS' ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-rose-500 mt-0.5" />
-                      )}
-                      <span className={log.status === 'RUNNING' ? 'text-zinc-800 font-semibold' : 'text-zinc-500'}>
-                        [Step {log.step}] <pre className="inline font-mono whitespace-pre-wrap">{log.description}</pre>
-                      </span>
+                  {logs.map((l) => (
+                    <div key={l.step} className="flex items-start gap-2.5">
+                      {l.status === 'RUNNING' ? <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400 mt-0.5" /> : l.status === 'SUCCESS' ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5" /> : <X className="h-3.5 w-3.5 text-rose-500 mt-0.5" />}
+                      <span className={l.status === 'RUNNING' ? 'text-zinc-800 font-semibold' : 'text-zinc-500'}>[Step {l.step}] <pre className="inline font-mono whitespace-pre-wrap">{l.description}</pre></span>
                     </div>
                   ))}
                 </div>
@@ -599,49 +422,14 @@ function App() {
           </AnimatePresence>
         </div>
 
-        {/* Input Command Area */}
-        <div className={`p-4 border-t z-10 flex flex-col gap-2 ${
-          isLight ? 'bg-zinc-100 border-zinc-300' : 'bg-zinc-950 border-zinc-800'
-        }`}>
+        {/* Input Bar */}
+        <div className={`p-4 border-t z-10 flex flex-col gap-2 ${isLight ? 'bg-zinc-100 border-zinc-300' : 'bg-zinc-950 border-zinc-800'}`}>
           <div className="relative flex items-center">
-            <div className={`absolute left-3.5 flex items-center gap-1 font-mono text-[10px] px-1.5 py-0.5 border rounded ${
-              isLight ? 'bg-zinc-200 border-zinc-300 text-zinc-600' : 'bg-zinc-900 border-zinc-800 text-zinc-500'
-            }`}>
-              <Command className="h-3 w-3" />
-              <span>ALT + SPACE</span>
-            </div>
-
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Instruct Atlas..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              disabled={!isConnected}
-              className={`w-full pl-36 pr-12 py-3.5 text-sm border rounded-xl placeholder-zinc-500 focus:outline-none transition-all font-sans ${
-                isLight 
-                  ? 'bg-white border-zinc-300 text-zinc-900 focus:border-zinc-600' 
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-100 focus:border-zinc-600'
-              }`}
-            />
-
+            <div className="absolute left-3.5 flex items-center gap-1 font-mono text-[10px] px-1.5 py-0.5 border rounded border-zinc-800 text-zinc-500"><Command className="h-3 w-3" /><span>ALT + SPACE</span></div>
+            <input ref={inputRef} type="text" placeholder="Instruct Atlas..." value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} disabled={!isConnected} className={`w-full pl-36 pr-12 py-3.5 text-sm border rounded-xl placeholder-zinc-500 focus:outline-none transition-all ${isLight ? 'bg-white border-zinc-300 text-zinc-900' : 'bg-zinc-900 border-zinc-800 text-zinc-100'}`} />
             <div className="absolute right-3.5 flex items-center">
-              <button
-                onClick={handleSend}
-                disabled={!prompt.trim() || !isConnected}
-                className={`p-1.5 rounded-lg disabled:opacity-30 transition-colors ${
-                  isLight ? 'bg-zinc-900 text-white hover:bg-black' : 'bg-zinc-100 text-zinc-950 hover:bg-white'
-                }`}
-              >
-                <Send className="h-4 w-4" />
-              </button>
+              <button onClick={handleSend} disabled={!prompt.trim() || !isConnected} className={`p-1.5 rounded-lg disabled:opacity-30 ${isLight ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-950'}`}><Send className="h-4 w-4" /></button>
             </div>
-          </div>
-
-          <div className="flex items-center justify-between text-[10px] text-zinc-500 px-1 font-mono">
-            <span>Powered by Gemini & Groq APIs</span>
-            <span>Press Enter to dispatch script</span>
           </div>
         </div>
       </div>

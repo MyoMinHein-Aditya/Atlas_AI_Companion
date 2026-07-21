@@ -18,6 +18,7 @@ from app.services.automation import take_screenshot, mouse_click, keyboard_type,
 from app.services.browser import browser_service
 from app.services.vision import vision_service
 from app.services.system import system_service
+from app.services.actions import action_dispatcher
 
 # Setup logging configuration
 logging.basicConfig(
@@ -192,273 +193,42 @@ async def websocket_endpoint(websocket: WebSocket):
                 # 5. Save Atlas response to DB
                 db_service.save_message(db, session_id, "atlas", response_text)
                 
-                # 6. Execute actions pipeline sequentially
+                # 6. Execute actions pipeline sequentially using ActionDispatcher
                 step_idx = 2
                 plan_halted = False
                 
                 for action in actions:
                     if plan_halted:
                         break
-                        
-                    action_type = action.get("type")
                     
-                    if action_type == "open_folder":
-                        folder_path = action.get("path", "")
-                        await websocket.send_json({
-                            "type": "execution_status",
-                            "step": step_idx,
-                            "status": "RUNNING",
-                            "description": f"Searching and opening folder: {folder_path}"
-                        })
-                        result_msg = system_service.open_folder_in_explorer(folder_path)
-                        await websocket.send_json({
-                            "type": "execution_status",
-                            "step": step_idx,
-                            "status": "SUCCESS",
-                            "description": result_msg
-                        })
-                        
-                        # Dispatch Action Completion Message into chat thread
-                        await websocket.send_json({
-                            "type": "chat_token",
-                            "token": f"\n\n[Action Completed]: {result_msg}"
-                        })
-                        db_service.save_message(db, session_id, "atlas", f"[Action Completed]: {result_msg}")
+                    action_type = action.get("type", "action")
+                    await websocket.send_json({
+                        "type": "execution_status",
+                        "step": step_idx,
+                        "status": "RUNNING",
+                        "description": f"Executing action: {action_type}"
+                    })
 
-                    elif action_type == "wifi_speed":
-                        await websocket.send_json({
-                            "type": "execution_status",
-                            "step": step_idx,
-                            "status": "RUNNING",
-                            "description": "Measuring real-time WiFi / Network speed..."
-                        })
-                        speed_res = await system_service.run_speed_test()
-                        summary = speed_res.get("summary", "Network test completed.")
-                        await websocket.send_json({
-                            "type": "execution_status",
-                            "step": step_idx,
-                            "status": "SUCCESS",
-                            "description": summary
-                        })
-                        
-                        # Dispatch Action Completion Message into chat thread
-                        completed_msg = f"Network Speed Test Completed — {summary}"
-                        await websocket.send_json({
-                            "type": "chat_token",
-                            "token": f"\n\n[Action Completed]: {completed_msg}"
-                        })
-                        db_service.save_message(db, session_id, "atlas", f"[Action Completed]: {completed_msg}")
+                    success, result_msg = await action_dispatcher.dispatch(action, websocket, step_idx, session_id, db)
+                    status = "SUCCESS" if success else "ERROR"
 
-                    elif action_type == "open_app":
-                        app_name = action.get("app", "")
-                        await websocket.send_json({
-                            "type": "execution_status",
-                            "step": step_idx,
-                            "status": "RUNNING",
-                            "description": f"Opening system application: {app_name}"
-                        })
-                        result_msg = system_service.launch_system_app(app_name)
-                        await websocket.send_json({
-                            "type": "execution_status",
-                            "step": step_idx,
-                            "status": "SUCCESS",
-                            "description": result_msg
-                        })
-                        
-                        # Dispatch Action Completion Message into chat thread
-                        await websocket.send_json({
-                            "type": "chat_token",
-                            "token": f"\n\n[Action Completed]: {result_msg}"
-                        })
-                        db_service.save_message(db, session_id, "atlas", f"[Action Completed]: {result_msg}")
+                    await websocket.send_json({
+                        "type": "execution_status",
+                        "step": step_idx,
+                        "status": status,
+                        "description": result_msg
+                    })
 
-                    elif action_type == "focus_app":
-                        name_query = action.get("name", "")
-                        await websocket.send_json({
-                            "type": "execution_status",
-                            "step": step_idx,
-                            "status": "RUNNING",
-                            "description": f"Bringing open window '{name_query}' into view..."
-                        })
-                        success = system_service.focus_window_by_name(name_query)
-                        status = "SUCCESS" if success else "ERROR"
-                        msg = f"Window '{name_query}' brought to view." if success else f"No window matching '{name_query}' found."
-                        await websocket.send_json({
-                            "type": "execution_status",
-                            "step": step_idx,
-                            "status": status,
-                            "description": msg
-                        })
-                        
-                        # Dispatch Action Completion Message into chat thread
-                        await websocket.send_json({
-                            "type": "chat_token",
-                            "token": f"\n\n[Action Completed]: {msg}"
-                        })
-                        db_service.save_message(db, session_id, "atlas", f"[Action Completed]: {msg}")
+                    # Dispatch Action Completion Message into chat thread
+                    await websocket.send_json({
+                        "type": "chat_token",
+                        "token": f"\n\n[Action Completed]: {result_msg}"
+                    })
+                    db_service.save_message(db, session_id, "atlas", f"[Action Completed]: {result_msg}")
 
-                    elif action_type == "shell":
-                        command = action.get("command", "")
-                        is_safe_launch = command.strip().lower().startswith("start ") or is_command_safe(command)
-                        
-                        # Auto-approve safe app launch commands starting with 'start '
-                        if is_safe_launch and command.strip().lower().startswith("start "):
-                            await websocket.send_json({
-                                "type": "execution_status",
-                                "step": step_idx,
-                                "status": "RUNNING",
-                                "description": f"Running: {command}"
-                            })
-                            output = await execute_command(command)
-                            await websocket.send_json({
-                                "type": "execution_status",
-                                "step": step_idx,
-                                "status": "SUCCESS",
-                                "description": f"Output:\n{output}"
-                            })
-                        else:
-                            # Trigger Security Consent Prompt for other shell commands
-                            await websocket.send_json({
-                                "type": "approval_required",
-                                "command": command,
-                                "step": step_idx
-                            })
-                            
-                            # Wait for client response
-                            approved = False
-                            while True:
-                                client_response = await websocket.receive_json()
-                                if client_response.get("type") == "approval_response":
-                                    approved = client_response.get("approved", False)
-                                    break
-                                    
-                            if approved:
-                                await websocket.send_json({
-                                  "type": "execution_status",
-                                  "step": step_idx,
-                                  "status": "RUNNING",
-                                  "description": f"Running: {command}"
-                                })
-                                
-                                output = await execute_command(command)
-                                
-                                await websocket.send_json({
-                                  "type": "execution_status",
-                                  "step": step_idx,
-                                  "status": "SUCCESS",
-                                  "description": f"Output:\n{output}"
-                                })
-                            else:
-                                await websocket.send_json({
-                                  "type": "execution_status",
-                                  "step": step_idx,
-                                  "status": "ERROR",
-                                  "description": "Script execution denied by user."
-                                })
-                                plan_halted = True
-                            
-                    elif action_type == "screenshot":
-                        await websocket.send_json({
-                          "type": "execution_status",
-                          "step": step_idx,
-                          "status": "RUNNING",
-                          "description": "Capturing active desktop screenshot..."
-                        })
-                        
-                        png_bytes = take_screenshot()
-                        os.makedirs("assets", exist_ok=True)
-                        with open("assets/screenshot.png", "wb") as f:
-                            f.write(png_bytes)
-                            
-                        await websocket.send_json({
-                          "type": "execution_status",
-                          "step": step_idx,
-                          "status": "SUCCESS",
-                          "description": "Screen captured successfully and saved to assets/screenshot.png"
-                        })
-                        
-                    elif action_type == "browser":
-                        url = action.get("url", "")
-                        await websocket.send_json({
-                          "type": "execution_status",
-                          "step": step_idx,
-                          "status": "RUNNING",
-                          "description": f"Launching Chromium browser to open: {url}"
-                        })
-                        
-                        await browser_service.navigate_to(url)
-                        text = await browser_service.scrape_text()
-                        await browser_service.close()
-                        
-                        await websocket.send_json({
-                          "type": "execution_status",
-                          "step": step_idx,
-                          "status": "SUCCESS",
-                          "description": f"Loaded page. Scraped {len(text)} characters of text."
-                        })
-                        
-                    elif action_type == "click_element":
-                        description = action.get("description", "")
-                        await websocket.send_json({
-                          "type": "execution_status",
-                          "step": step_idx,
-                          "status": "RUNNING",
-                          "description": f"Locating coordinates for element: '{description}'"
-                        })
-                        
-                        png_bytes = take_screenshot()
-                        coords = await vision_service.locate_element(png_bytes, description)
-                        
-                        if coords:
-                            x, y = coords
-                            await websocket.send_json({
-                              "type": "execution_status",
-                              "step": step_idx,
-                              "status": "RUNNING",
-                              "description": f"Moving cursor and clicking coordinates: ({x}, {y})"
-                            })
-                            mouse_click(x, y)
-                            await websocket.send_json({
-                              "type": "execution_status",
-                              "step": step_idx,
-                              "status": "SUCCESS",
-                              "description": f"Successfully clicked ({x}, {y}) for element: '{description}'"
-                            })
-                        else:
-                            await websocket.send_json({
-                              "type": "execution_status",
-                              "step": step_idx,
-                              "status": "ERROR",
-                              "description": f"Could not locate pixel coordinate for: '{description}'"
-                            })
-                            plan_halted = True
-                            
-                    elif action_type == "read_screen_text":
-                        await websocket.send_json({
-                          "type": "execution_status",
-                          "step": step_idx,
-                          "status": "RUNNING",
-                          "description": "Analyzing screen layout for text extraction (OCR)..."
-                        })
-                        
-                        png_bytes = take_screenshot()
-                        ocr_text = await vision_service.analyze_screenshot(
-                            png_bytes, "List all readable text visible on this computer screen."
-                        )
-                        
-                        # Yield text directly to user bubble
-                        await websocket.send_json({
-                            "type": "chat_token",
-                            "token": f"\n\n[Screen Text OCR Output]:\n{ocr_text}\n"
-                        })
-                        
-                        await websocket.send_json({
-                          "type": "execution_status",
-                          "step": step_idx,
-                          "status": "SUCCESS",
-                          "description": "Completed screen text extraction."
-                        })
-                        
+                    if not success:
+                        plan_halted = True
+
                     step_idx += 1
                 
                 # 7. Consolidate chat session context if long

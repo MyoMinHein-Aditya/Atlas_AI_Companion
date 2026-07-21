@@ -70,11 +70,11 @@ This is the living document tracking all micro-tasks across development phases.
 
 ---
 
-## Phase 6: Real-Time System Access, Silent Subprocesses & Path Resolver (Completed)
+## Phase 6: Code Refactoring, Pydantic Data Structures & Modular Dispatcher (Completed)
 
-- [x] Added `find_local_folder`, `open_folder_in_explorer`, and `list_running_applications` in `backend/app/services/system.py`
-- [x] Added `creationflags=subprocess.CREATE_NO_WINDOW` in `backend/app/services/executor.py` for 100% silent subprocess execution
-- [x] Configured real-time system context auto-injection into every prompt turn in `backend/app/main.py`
-- [x] Enforced complete database session history loading on every turn for persistent context memory
-- [x] Added `tests/test_system_access.py` unit test suite (19/19 tests passing)
+- [x] Created Pydantic V2 data structures in `backend/app/models/schemas.py` (`ActionItem`, `AIPlanResponse`, `SystemMetrics`, `SpeedTestResult`)
+- [x] Implemented `ActionDispatcher` service in `backend/app/services/actions.py` with concise <5-line single-purpose action handlers
+- [x] Reduced `main.py` action loop from 150+ lines down to ~20 lines
+- [x] Modularized `frontend/src/App.tsx` into clean, concise sub-components (`SettingsModal`, `ChatMessageItem`)
+- [x] Added `tests/test_schemas_actions.py` unit test suite (22/22 tests passing)
 - [x] Synchronized remote repository `https://github.com/MyoMinHein-Aditya/Atlas_AI_Companion.git`

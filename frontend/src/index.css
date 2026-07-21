@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    width: 100vw;
+    background-color: #09090b !important;
+    color: #fafafa;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    antialiased: true;
+    overflow: hidden;
+  }
+}
+
+/* Minimal Solid Components (No glassmorphism) */
+.glass-panel {
+  background: #09090b;
+  border: 1px solid #27272a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.glass-input {
+  background: #18181b;
+  border: 1px solid #27272a;
+  color: #fafafa;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.glass-input:focus {
+  border-color: #52525b;
+  background: #18181b;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}

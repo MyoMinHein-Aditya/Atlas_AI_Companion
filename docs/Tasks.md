@@ -70,10 +70,12 @@ This is the living document tracking all micro-tasks across development phases.
 
 ---
 
-## Phase 6: System Metrics & Active Context Monitoring (Completed)
+## Phase 6: System Control, Auto-Approval & Settings Refinement (Completed)
 
-- [x] Integrated `psutil` library into `backend/requirements.txt`
-- [x] Developed `SystemService` in `backend/app/services/system.py` (CPU, RAM, Disk, Windows ctypes active window tracking)
-- [x] Added GET `/api/system/context` endpoint and WebSocket AI prompt context injection
-- [x] Added `tests/test_system.py` unit test suite (13/13 tests passing)
+- [x] Added native Windows `user32` `EnumWindows` & `SetForegroundWindow` window focusing in `backend/app/services/system.py`
+- [x] Added `launch_system_app` for launching default Windows system applications (`start notepad`, `start calc`, `start msedge`, `start explorer`, etc.)
+- [x] Reduced token streaming sleep from `0.05s` to `0.005s` for ultra-fast chat responses
+- [x] Added Auto-Approval logic for safe app launching & execution actions
+- [x] Created Settings Modal with **Theme Slider (Light/Dark Mode)**, **Voice Mode Slider**, and **Auto-Approve Toggle** in React UI
+- [x] Added `tests/test_app_focus.py` unit test suite (15/15 tests passing)
 - [x] Synchronized remote repository `https://github.com/MyoMinHein-Aditya/Atlas_AI_Companion.git`

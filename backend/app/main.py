@@ -178,7 +178,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "type": "chat_token",
                         "token": token + " "
                     })
-                    await asyncio.sleep(0.05)
+                    await asyncio.sleep(0.005)
                 
                 # 5. Save Atlas response to DB
                 db_service.save_message(db, session_id, "atlas", response_text)
@@ -193,48 +193,99 @@ async def websocket_endpoint(websocket: WebSocket):
                         
                     action_type = action.get("type")
                     
-                    if action_type == "shell":
-                        command = action.get("command", "")
-                        
-                        # Trigger Security Consent Prompt
+                    if action_type == "open_app":
+                        app_name = action.get("app", "")
                         await websocket.send_json({
-                            "type": "approval_required",
-                            "command": command,
-                            "step": step_idx
+                            "type": "execution_status",
+                            "step": step_idx,
+                            "status": "RUNNING",
+                            "description": f"Opening system application: {app_name}"
                         })
+                        result_msg = system_service.launch_system_app(app_name)
+                        await websocket.send_json({
+                            "type": "execution_status",
+                            "step": step_idx,
+                            "status": "SUCCESS",
+                            "description": result_msg
+                        })
+
+                    elif action_type == "focus_app":
+                        name_query = action.get("name", "")
+                        await websocket.send_json({
+                            "type": "execution_status",
+                            "step": step_idx,
+                            "status": "RUNNING",
+                            "description": f"Bringing open window '{name_query}' into view..."
+                        })
+                        success = system_service.focus_window_by_name(name_query)
+                        status = "SUCCESS" if success else "ERROR"
+                        msg = f"Window '{name_query}' brought to view." if success else f"No window matching '{name_query}' found."
+                        await websocket.send_json({
+                            "type": "execution_status",
+                            "step": step_idx,
+                            "status": status,
+                            "description": msg
+                        })
+
+                    elif action_type == "shell":
+                        command = action.get("command", "")
+                        is_safe_launch = command.strip().lower().startswith("start ") or is_command_safe(command)
                         
-                        # Wait for client response
-                        approved = False
-                        while True:
-                            client_response = await websocket.receive_json()
-                            if client_response.get("type") == "approval_response":
-                                approved = client_response.get("approved", False)
-                                break
-                                
-                        if approved:
+                        # Auto-approve safe app launch commands starting with 'start '
+                        if is_safe_launch and command.strip().lower().startswith("start "):
                             await websocket.send_json({
-                              "type": "execution_status",
-                              "step": step_idx,
-                              "status": "RUNNING",
-                              "description": f"Running: {command}"
+                                "type": "execution_status",
+                                "step": step_idx,
+                                "status": "RUNNING",
+                                "description": f"Running: {command}"
                             })
-                            
                             output = await execute_command(command)
-                            
                             await websocket.send_json({
-                              "type": "execution_status",
-                              "step": step_idx,
-                              "status": "SUCCESS",
-                              "description": f"Output:\n{output}"
+                                "type": "execution_status",
+                                "step": step_idx,
+                                "status": "SUCCESS",
+                                "description": f"Output:\n{output}"
                             })
                         else:
+                            # Trigger Security Consent Prompt for other shell commands
                             await websocket.send_json({
-                              "type": "execution_status",
-                              "step": step_idx,
-                              "status": "ERROR",
-                              "description": "Script execution denied by user."
+                                "type": "approval_required",
+                                "command": command,
+                                "step": step_idx
                             })
-                            plan_halted = True
+                            
+                            # Wait for client response
+                            approved = False
+                            while True:
+                                client_response = await websocket.receive_json()
+                                if client_response.get("type") == "approval_response":
+                                    approved = client_response.get("approved", False)
+                                    break
+                                    
+                            if approved:
+                                await websocket.send_json({
+                                  "type": "execution_status",
+                                  "step": step_idx,
+                                  "status": "RUNNING",
+                                  "description": f"Running: {command}"
+                                })
+                                
+                                output = await execute_command(command)
+                                
+                                await websocket.send_json({
+                                  "type": "execution_status",
+                                  "step": step_idx,
+                                  "status": "SUCCESS",
+                                  "description": f"Output:\n{output}"
+                                })
+                            else:
+                                await websocket.send_json({
+                                  "type": "execution_status",
+                                  "step": step_idx,
+                                  "status": "ERROR",
+                                  "description": "Script execution denied by user."
+                                })
+                                plan_halted = True
                             
                     elif action_type == "screenshot":
                         await websocket.send_json({

@@ -18,25 +18,29 @@ The JSON schema must be exactly:
   "actions": [
      // List of actions to execute in order. Leave empty [] if no actions are needed.
      // Valid action structures:
-     // 1. Shell commands:
-     //    { "type": "shell", "command": "python --version" }
-     // 2. Desktop screen capture:
+     // 1. Open/launch system apps or bring opened windows to front view:
+     //    { "type": "open_app", "app": "notepad" }  // or "calculator", "browser", "chrome", "edge", "vscode", "explorer"
+     // 2. Focus existing window by title/name:
+     //    { "type": "focus_app", "name": "Chrome" }
+     // 3. Shell commands:
+     //    { "type": "shell", "command": "start notepad" }
+     // 4. Desktop screen capture:
      //    { "type": "screenshot" }
-     // 3. Web automation:
+     // 5. Web automation:
      //    { "type": "browser", "url": "https://news.ycombinator.com" }
-     // 4. Extract screen text (OCR):
+     // 6. Extract screen text (OCR):
      //    { "type": "read_screen_text" }
-     // 5. Visual element click:
+     // 7. Visual element click:
      //    { "type": "click_element", "description": "The center of the blue login button" }
   ]
 }
 
-Example user prompt: "Check python version"
+Example user prompt: "Open notepad"
 Example response:
 {
-  "response": "Checking the current Python version on your system.",
+  "response": "Opening Notepad for you.",
   "actions": [
-    { "type": "shell", "command": "python --version" }
+    { "type": "open_app", "app": "notepad" }
   ]
 }
 """
@@ -94,7 +98,6 @@ class AIService:
     # Parse JSON
     if raw_content:
       try:
-        # Strip markdown syntax wraps if the model returned them
         if raw_content.startswith("```json"):
             raw_content = raw_content[7:]
         if raw_content.endswith("```"):

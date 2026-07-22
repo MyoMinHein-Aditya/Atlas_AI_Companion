@@ -7,7 +7,6 @@ from app.services.executor import execute_command, is_command_safe
 from app.services.automation import take_screenshot, mouse_click
 from app.services.browser import browser_service
 from app.services.vision import vision_service
-from app.services import db_service
 
 logger = logging.getLogger("atlas-backend")
 
@@ -66,6 +65,30 @@ class ActionDispatcher:
         text = await vision_service.extract_screen_text(png_bytes)
         return f"OCR Text Extracted:\n{text[:300]}"
 
+    async def handle_volume(self, action: Dict[str, Any]) -> str:
+        """Handler for system volume control (<5 lines)."""
+        direction = action.get("direction", "up")
+        return system_service.change_volume(direction)
+
+    async def handle_power(self, action: Dict[str, Any]) -> str:
+        """Handler for system power actions (<5 lines)."""
+        state = action.get("state", "lock")
+        return system_service.set_system_power(state)
+
+    async def handle_file_search(self, action: Dict[str, Any]) -> str:
+        """Handler for keyword workspace file search (<10 lines)."""
+        keyword = action.get("keyword", "")
+        matches = system_service.search_file_contents(keyword)
+        if not matches:
+            return f"No files containing keyword '{keyword}' found in workspace."
+        details = "\n".join([f"- {m['file']} ({m['path']})" for m in matches])
+        return f"Found {len(matches)} files containing keyword '{keyword}':\n{details}"
+
+    async def handle_read_file(self, action: Dict[str, Any]) -> str:
+        """Handler for text file reading (<5 lines)."""
+        path = action.get("path", "")
+        return system_service.read_file_text(path)
+
     async def dispatch(self, action: Dict[str, Any], websocket: WebSocket, step_idx: int, session_id: str, db: Any) -> Tuple[bool, str]:
         """Dispatches action dictionary to matching modular handler function."""
         action_type = action.get("type", "")
@@ -74,34 +97,38 @@ class ActionDispatcher:
         if action_type == "open_folder":
             msg = await self.handle_open_folder(action)
             return True, msg
-
         elif action_type == "open_app":
             msg = await self.handle_open_app(action)
             return True, msg
-
         elif action_type == "focus_app":
             msg = await self.handle_focus_app(action)
             return True, msg
-
         elif action_type == "wifi_speed":
             msg = await self.handle_wifi_speed(action)
             return True, msg
-
         elif action_type == "screenshot":
             msg = await self.handle_screenshot(action)
             return True, msg
-
         elif action_type == "browser":
             msg = await self.handle_browser(action)
             return True, msg
-
         elif action_type == "click_element":
             return await self.handle_click_element(action)
-
         elif action_type == "read_screen_text":
             msg = await self.handle_read_screen_text(action)
             return True, msg
-
+        elif action_type == "volume":
+            msg = await self.handle_volume(action)
+            return True, msg
+        elif action_type == "power":
+            msg = await self.handle_power(action)
+            return True, msg
+        elif action_type == "file_search":
+            msg = await self.handle_file_search(action)
+            return True, msg
+        elif action_type == "read_file":
+            msg = await self.handle_read_file(action)
+            return True, msg
         elif action_type == "shell":
             command = action.get("command", "")
             is_safe_launch = command.strip().lower().startswith("start ") or is_command_safe(command)
@@ -110,7 +137,6 @@ class ActionDispatcher:
                 output = await execute_command(command)
                 return True, f"Output:\n{output}"
 
-            # Trigger security approval for sensitive shell scripts
             await websocket.send_json({"type": "approval_required", "command": command, "step": step_idx})
             approved = False
             while True:

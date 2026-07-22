@@ -149,9 +149,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 db_messages = db_service.get_session_history(db, session_id)
                 history = [{"sender": m.sender, "content": m.content} for m in db_messages[:-1]]
 
-                # Attach real-time system state (active window, processes, metrics)
+                # Attach real-time system state (active window, processes, metrics, battery)
                 realtime_sys = system_service.get_system_context()
-                sys_context_str = f"[Real-Time System Context]: Active Window: '{realtime_sys['active_window']['title']}', Running Apps: {', '.join(realtime_sys['running_apps'][:5])}"
+                sys_context_str = f"[Real-Time System Context]: Active Window: '{realtime_sys['active_window']['title']}', Running Apps: {', '.join(realtime_sys['running_apps'][:5])}, Battery: {realtime_sys['battery']['percent']}% (Plugged: {realtime_sys['battery']['power_plugged']})"
                 history.insert(0, {"sender": "atlas", "content": sys_context_str})
 
                 # Send running status to UI

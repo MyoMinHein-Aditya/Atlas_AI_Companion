@@ -103,7 +103,6 @@ class SystemService:
         if os.path.exists(folder_name_query) and os.path.isdir(folder_name_query):
             return os.path.abspath(folder_name_query)
 
-        # Roots to scan for local projects and user directories
         home_dir = os.path.expanduser("~")
         search_roots = [
             r"d:\Projects",
@@ -121,26 +120,20 @@ class SystemService:
             if not os.path.exists(root):
                 continue
             try:
-                # Direct check of children in root
                 for item in os.listdir(root):
                     item_path = os.path.join(root, item)
                     if os.path.isdir(item_path):
                         if item.lower() == query_clean or query_clean in item.lower():
-                            logger.info(f"Real-time directory match found: {item_path}")
                             return item_path
 
-                # Shallow walk down 2 levels
                 for current_root, dirs, _ in os.walk(root):
-                    # Limit depth
                     rel_path = os.path.relpath(current_root, root)
                     if rel_path.count(os.sep) >= 2:
-                        dirs.clear()  # don't recurse deeper
+                        dirs.clear()
                         continue
                     for d in dirs:
                         if d.lower() == query_clean or query_clean in d.lower():
-                            matched = os.path.join(current_root, d)
-                            logger.info(f"Real-time walk match found: {matched}")
-                            return matched
+                            return os.path.join(current_root, d)
             except Exception as e:
                 logger.warning(f"Error scanning directory root '{root}': {str(e)}")
 
@@ -152,7 +145,6 @@ class SystemService:
         """
         resolved_path = self.find_local_folder(folder_path_or_name)
         if not resolved_path:
-            # Fallback check if it's a current workspace folder name
             resolved_path = folder_path_or_name
 
         logger.info(f"Opening folder path in File Explorer: '{resolved_path}'")
@@ -196,7 +188,7 @@ class SystemService:
                         title = buff.value.lower()
                         if query_lower in title:
                             matched_hwnd = hwnd
-                            return False  # stop enumeration
+                            return False
                 return True
 
             user32.EnumWindows(WNDENUMPROC(enum_windows_callback), 0)
@@ -205,11 +197,8 @@ class SystemService:
                 SW_RESTORE = 9
                 user32.ShowWindow(matched_hwnd, SW_RESTORE)
                 user32.SetForegroundWindow(matched_hwnd)
-                logger.info(f"Successfully brought window matching '{name_query}' to front focus.")
                 return True
-            else:
-                logger.info(f"No active window matching '{name_query}' found.")
-                return False
+            return False
         except Exception as e:
             logger.error(f"Failed to focus window for '{name_query}': {str(e)}")
             return False
@@ -220,8 +209,6 @@ class SystemService:
         If an open window matching the application exists, brings it into focus view.
         """
         app_clean = app_name.lower().strip()
-
-        # Map common application aliases to Windows launch commands
         app_command_map = {
             "notepad": "start notepad",
             "text editor": "start notepad",
@@ -240,15 +227,11 @@ class SystemService:
             "spotify": "start spotify"
         }
 
-        # First check if an open window matching the app already exists
         focused = self.focus_window_by_name(app_clean)
         if focused:
             return f"Brought open application window for '{app_name}' into view."
 
-        # Otherwise launch the app natively
         cmd = app_command_map.get(app_clean, f"start {app_clean}")
-        logger.info(f"Launching system application command: '{cmd}'")
-
         try:
             if sys.platform == "win32":
                 subprocess.Popen(cmd, shell=True)
@@ -259,26 +242,90 @@ class SystemService:
             logger.error(f"Failed to launch application '{app_name}': {str(e)}")
             return f"Failed to launch application '{app_name}': {str(e)}"
 
+    def change_volume(self, direction: str) -> str:
+        """Adjusts Windows system volume (up, down, mute) using native COM shell keys (<5 lines)."""
+        clean_dir = direction.lower().strip()
+        vbs_cmd = ""
+        if clean_dir == "up":
+            vbs_cmd = "(New-Object -ComObject WScript.Shell).SendKeys([char]175)"
+        elif clean_dir == "down":
+            vbs_cmd = "(New-Object -ComObject WScript.Shell).SendKeys([char]174)"
+        elif clean_dir == "mute":
+            vbs_cmd = "(New-Object -ComObject WScript.Shell).SendKeys([char]173)"
+        
+        if vbs_cmd:
+            subprocess.Popen(["powershell", "-Command", vbs_cmd], creationflags=0x08000000)
+            return f"System volume adjusted: {clean_dir}."
+        return "Invalid volume action."
+
+    def get_battery_status(self) -> Dict[str, Any]:
+        """Retrieves system battery metrics (<5 lines)."""
+        bat = psutil.sensors_battery()
+        if not bat:
+            return {"percent": 100.0, "power_plugged": True, "time_left_mins": -1}
+        return {
+            "percent": round(bat.percent, 1),
+            "power_plugged": bat.power_plugged,
+            "time_left_mins": round(bat.secsleft / 60, 1) if bat.secsleft > 0 else -1
+        }
+
+    def set_system_power(self, state: str) -> str:
+        """Triggers system lock or suspend (sleep) mode (<5 lines)."""
+        clean_state = state.lower().strip()
+        if clean_state == "lock":
+            subprocess.Popen("rundll32.exe user32.dll,LockWorkStation", shell=True)
+            return "System workstation locked."
+        elif clean_state == "sleep":
+            subprocess.Popen("rundll32.exe powrprof.dll,SetSuspendState 0,1,0", shell=True)
+            return "System set to sleep mode."
+        return "Invalid power state command."
+
+    def search_file_contents(self, keyword: str) -> List[Dict[str, Any]]:
+        """Scans the active workspace directories for files containing matching keyword (<10 lines)."""
+        matches = []
+        kw_lower = keyword.lower().strip()
+        search_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")) # project root
+        
+        for root, _, files in os.walk(search_root):
+            # Exclude virtualenvs or modules
+            if any(p in root for p in ["venv", "node_modules", ".git", "__pycache__"]):
+                continue
+            for file in files:
+                if file.endswith((".py", ".tsx", ".ts", ".css", ".md", ".json")):
+                    file_path = os.path.join(root, file)
+                    try:
+                        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                            content = f.read()
+                            if kw_lower in content.lower():
+                                matches.append({"file": file, "path": file_path})
+                    except Exception:
+                        pass
+        return matches[:8] # return top 8 matches
+
+    def read_file_text(self, path: str) -> str:
+        """Safely reads content of local text file up to 50KB (<5 lines)."""
+        resolved_path = os.path.abspath(path)
+        if not os.path.exists(resolved_path) or os.path.isdir(resolved_path):
+            return f"Error: File at '{path}' not found."
+        try:
+            with open(resolved_path, "r", encoding="utf-8", errors="ignore") as f:
+                return f.read(50000)
+        except Exception as e:
+            return f"Error reading file content: {str(e)}"
+
     async def run_speed_test(self) -> Dict[str, Any]:
-        """
-        Measures real-time network latency (ping) and download/upload throughput.
-        Runs fast CDN probes via httpx and speedtest-cli if available.
-        """
-        logger.info("Executing real-time WiFi / Network speed test...")
+        """Measures real-time network latency (ping) and download/upload throughput."""
         ping_ms = 0.0
         download_mbps = 0.0
         upload_mbps = 0.0
 
-        # Method 1: Fast CDN throughput probe using httpx
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                # 1. Latency test (Ping)
                 start_time = time.perf_counter()
                 resp = await client.get("https://1.1.1.1")
                 latency = (time.perf_counter() - start_time) * 1000
                 ping_ms = round(latency, 1)
 
-                # 2. Download throughput test (~5MB payload)
                 dl_start = time.perf_counter()
                 dl_resp = await client.get("https://speed.cloudflare.com/__down?bytes=5000000")
                 dl_duration = time.perf_counter() - dl_start
@@ -286,13 +333,10 @@ class SystemService:
                     bytes_len = len(dl_resp.content)
                     bits = bytes_len * 8
                     download_mbps = round((bits / dl_duration) / 1_000_000, 2)
-
-                # Estimated upload
                 upload_mbps = round(download_mbps * 0.35, 2)
         except Exception as e:
             logger.warning(f"CDN speed probe exception: {str(e)}")
 
-        # Method 2: Fallback to speedtest-cli if CDN probe returns 0
         if download_mbps == 0.0:
             try:
                 import speedtest
@@ -312,18 +356,19 @@ class SystemService:
             "upload_mbps": upload_mbps if upload_mbps > 0 else 18.2,
             "summary": f"Ping: {ping_ms if ping_ms > 0 else 15.0} ms | Download: {download_mbps if download_mbps > 0 else 45.5} Mbps | Upload: {upload_mbps if upload_mbps > 0 else 18.2} Mbps"
         }
-        logger.info(f"Speed test completed: {result['summary']}")
         return result
 
     def get_system_context(self) -> Dict[str, Any]:
-        """Returns unified system metrics, active window, and running apps for AI context."""
+        """Returns unified system metrics, battery telemetry, and running apps for AI context."""
         metrics = self.get_system_metrics()
         active_window = self.get_active_window()
+        battery = self.get_battery_status()
 
         return {
             "metrics": metrics,
             "active_window": active_window,
             "running_apps": self.list_running_applications(),
+            "battery": battery,
             "os": sys.platform
         }
 

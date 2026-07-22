@@ -10,6 +10,9 @@ class ActionItem(BaseModel):
     command: Optional[str] = None
     url: Optional[str] = None
     description: Optional[str] = None
+    direction: Optional[str] = None
+    state: Optional[str] = None
+    keyword: Optional[str] = None
 
 class AIPlanResponse(BaseModel):
     """Structured Pydantic model for AI plan responses."""
@@ -36,10 +39,16 @@ class ActiveWindowInfo(BaseModel):
     title: str
     process: str
 
+class BatteryInfo(BaseModel):
+    percent: float
+    power_plugged: bool
+    time_left_mins: float
+
 class SystemContextPayload(BaseModel):
     metrics: SystemMetrics
     active_window: ActiveWindowInfo
     running_apps: List[str] = Field(default_factory=list)
+    battery: BatteryInfo
     os: str
 
 class SpeedTestResult(BaseModel):

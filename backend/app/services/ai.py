@@ -26,15 +26,23 @@ The JSON schema must be exactly:
      //    { "type": "focus_app", "name": "Chrome" }
      // 4. Test WiFi / Network Speed:
      //    { "type": "wifi_speed" }
-     // 5. Shell commands:
+     // 5. Adjust system volume:
+     //    { "type": "volume", "direction": "up|down|mute" }
+     // 6. System power actions:
+     //    { "type": "power", "state": "lock|sleep" }
+     // 7. Search workspace files by keyword:
+     //    { "type": "file_search", "keyword": "search_term" }
+     // 8. Read local file text:
+     //    { "type": "read_file", "path": "path_to_file" }
+     // 9. Shell commands:
      //    { "type": "shell", "command": "start notepad" }
-     // 6. Desktop screen capture:
+     // 10. Desktop screen capture:
      //    { "type": "screenshot" }
-     // 7. Web automation:
+     // 11. Web automation:
      //    { "type": "browser", "url": "https://news.ycombinator.com" }
-     // 8. Extract screen text (OCR):
+     // 12. Extract screen text (OCR):
      //    { "type": "read_screen_text" }
-     // 9. Visual element click:
+     // 13. Visual element click:
      //    { "type": "click_element", "description": "The center of the blue login button" }
   ]
 }

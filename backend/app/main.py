@@ -12,11 +12,6 @@ from app.db.session import engine, SessionLocal, get_db
 from app.models.memory import ChatSession, ChatMessage, MemoryNode
 from app.services import db_service
 
-# Import Automation & Vision Services
-from app.services.executor import execute_command, is_command_safe
-from app.services.automation import take_screenshot, mouse_click, keyboard_type, keyboard_press
-from app.services.browser import browser_service
-from app.services.vision import vision_service
 from app.services.system import system_service
 from app.services.actions import action_dispatcher
 
